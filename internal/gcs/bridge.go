@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"sync"
 	"time"
 
@@ -293,6 +294,11 @@ func (brdg *bridge) recvLoop() error {
 			}
 			return fmt.Errorf("bridge read failed: %w", err)
 		}
+		// DEBUG: dump full payload to file for issue #13254 investigation
+		if df, derr := os.OpenFile(`C:\bridge-debug.log`, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); derr == nil {
+			fmt.Fprintf(df, "RECV id=%d type=%s payload=%s\n", id, typ.String(), string(b))
+			df.Close()
+		}
 		brdg.log.WithFields(logrus.Fields{
 			"payload":    string(b),
 			"type":       typ.String(),
@@ -387,6 +393,11 @@ func (brdg *bridge) writeMessage(buf *bytes.Buffer, enc *json.Encoder, typ prot.
 	err = enc.Encode(req)
 	if err != nil {
 		return fmt.Errorf("bridge encode: %w", err)
+	}
+	// DEBUG: dump full payload to file for issue #13254 investigation
+	if df, derr := os.OpenFile(`C:\bridge-debug.log`, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); derr == nil {
+		fmt.Fprintf(df, "SEND id=%d type=%s payload=%s\n", id, typ.String(), string(buf.Bytes()[prot.HdrSize:]))
+		df.Close()
 	}
 	// Update the message header with the size.
 	binary.LittleEndian.PutUint32(buf.Bytes()[prot.HdrOffSize:], uint32(buf.Len()))
