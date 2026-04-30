@@ -36,15 +36,18 @@ func (uvm *UtilityVM) CombineLayersWCOW(ctx context.Context, layerPaths []hcssch
 			},
 		}
 	} else {
+		settings := guestresource.WCOWCombinedLayers{
+			ContainerRootPath: containerRootPath,
+			Layers:            layerPaths,
+		}
+		if filterType != hcsschema.WCIFS {
+			settings.FilterType = filterType
+		}
 		modifyRequest = &hcsschema.ModifySettingRequest{
 			GuestRequest: guestrequest.ModificationRequest{
 				ResourceType: guestresource.ResourceTypeCombinedLayers,
 				RequestType:  guestrequest.RequestTypeAdd,
-				Settings: guestresource.WCOWCombinedLayers{
-					ContainerRootPath: containerRootPath,
-					Layers:            layerPaths,
-					FilterType:        filterType,
-				},
+				Settings:     settings,
 			},
 		}
 	}
